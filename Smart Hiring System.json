@@ -1,0 +1,944 @@
+{
+  "name": "Smart Hiring System",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        544
+      ],
+      "id": "7b461d9d-40a8-4d82-b7f6-b4a5b3d94ee8",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "CxJLRvnOfTjrdadu",
+          "name": "Google Gemini(PaLM) Api account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {},
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "fb4c26d7-4a1e-4c11-9843-39211cd7f5b2",
+      "name": "Terima Email Lamaran",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "LEczYB9mRqk0aoLK",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "messageId": "={{$json[\"id\"]}}",
+        "simple": false,
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "f029b9d0-ad67-412f-8a64-3444d1559b8a",
+      "name": "Ambil Detail Email & Attachment",
+      "webhookId": "a79276bb-bb21-40e5-946f-778a4c2112ca",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "LEczYB9mRqk0aoLK",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8bfea2f6-86c9-4b91-923c-70a915690c9f",
+              "name": "email",
+              "value": "={{ $json.from.value[0].address }}",
+              "type": "string"
+            },
+            {
+              "id": "d536f2fb-e168-4db5-8ddd-7ebbeb8c2624",
+              "name": "headers",
+              "value": "={{ $json.headers.subject }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        592,
+        -208
+      ],
+      "id": "2b0ae767-3a25-41ef-a47c-59b7a69719e9",
+      "name": "Ambil Email & Subject"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "=attachment_0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        -16
+      ],
+      "id": "58667bbb-4bc4-4161-a75b-cb1bf822949c",
+      "name": "Ekstrak Teks CV"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e6010cfb-5364-4404-ae5f-d2b194d3c76e",
+              "name": "cv",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        704,
+        -16
+      ],
+      "id": "23d66761-92cd-42e2-878f-b1c62de8abb1",
+      "name": "Simpan Teks CV"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "17b3114f-5b10-4196-88ed-8d6b8fe35751",
+      "name": "Gabungkan Data Email & CV"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Kamu adalah HR profesional dengan pengalaman 10+ tahun dalam rekrutmen teknologi.\n\nTugas kamu adalah mengevaluasi kandidat berdasarkan data berikut:\n\n=====================\nEMAIL PELAMAR:\n{{ $json.email }}\n\nSUBJECT EMAIL:\n{{ $json.headers }}\n\nCV KANDIDAT:\n{{ $json.cv }}\n=====================\n\nINSTRUKSI:\n- Gunakan SUBJECT untuk mengetahui posisi yang dilamar\n- Format subject: \"NamaPosisi_NamaKandidat\" (contoh: \"AI Engineer_Budi\" atau \"UI UX Designer_Sari\")\n- Gunakan CV untuk menilai skill, pengalaman, dan kelayakan kandidat\n- Fokus pada relevansi, bukan sekadar keyword\n\n========================================\nDAFTAR POSISI & KRITERIA PENILAIAN\n========================================\n\n--- 1. WEB DEVELOPER ---\nMinimal pengalaman: 1 tahun\nSkill wajib: HTML, CSS, JavaScript, React atau Vue, Node.js, Database (MySQL/PostgreSQL), Git\nNilai tambah: TypeScript, REST API, Docker, CI/CD, UI/UX dasar\n\n--- 2. AI ENGINEER ---\nMinimal pengalaman: 1 tahun\nSkill wajib: Python, Machine Learning, Deep Learning, TensorFlow atau PyTorch, NLP atau Computer Vision, Git\nNilai tambah: MLOps, LLM (OpenAI/Gemini/Claude), RAG, Vector DB, Cloud AI (AWS/GCP/Azure)\n\n--- 3. UI/UX DESIGNER ---\nMinimal pengalaman: 1 tahun\nSkill wajib: Figma atau Sketch, User Research, Wireframing, Prototyping, Design System\nNilai tambah: Motion Design, Usability Testing, HTML/CSS dasar, Adobe XD\n\n--- 4. DATA ENGINEER ---\nMinimal pengalaman: 1 tahun\nSkill wajib: Python atau Scala, SQL, ETL Pipeline, Apache Spark atau Kafka, Data Warehouse (BigQuery/Redshift/Snowflake), Git\nNilai tambah: Airflow, dbt, Kafka, Cloud (AWS/GCP/Azure), BI Tools\n\n--- 5. IT SUPPORT ---\nMinimal pengalaman: 6 bulan\nSkill wajib: Troubleshooting Hardware & Software, Networking Dasar (TCP/IP, DNS, DHCP), Windows & Linux, Ticketing System\nNilai tambah: Active Directory, VPN, Cloud Support (Microsoft 365/Google Workspace), Sertifikasi CompTIA A+\n\n--- 6. BACKEND DEVELOPER ---\nMinimal pengalaman: 1 tahun\nSkill wajib: Satu bahasa backend (Node.js/Python/Go/Java/PHP), REST API, Database (SQL & NoSQL), Git\nNilai tambah: Microservices, Docker, Kubernetes, Message Queue (RabbitMQ/Kafka), GraphQL\n\n--- 7. MOBILE DEVELOPER ---\nMinimal pengalaman: 1 tahun\nSkill wajib: Flutter atau React Native atau Swift/Kotlin native, API Integration, Git, App Store / Play Store deployment\nNilai tambah: Firebase, Push Notification, In-App Purchase, CI/CD Mobile\n\n--- 8. DEVOPS ENGINEER ---\nMinimal pengalaman: 1 tahun\nSkill wajib: Linux, Docker, Kubernetes, CI/CD (Jenkins/GitLab CI/GitHub Actions), Cloud (AWS/GCP/Azure), Git\nNilai tambah: Terraform, Ansible, Monitoring (Prometheus/Grafana), Security (DevSecOps)\n\n--- 9. POSISI LAIN ---\nJika posisi tidak ada dalam daftar di atas, evaluasi secara umum berdasarkan relevansi CV terhadap posisi yang dilamar. Gunakan kriteria umum: relevansi skill, pengalaman, kesesuaian posisi, dan kualitas CV.\n\n========================================\nSISTEM PENILAIAN (WAJIB IKUTI UNTUK SEMUA POSISI)\n========================================\n\nTotal skor = 100\n\n1. Relevansi Skill (40%)\n- Semua skill wajib ada & digunakan → 35–40\n- Sebagian skill wajib → 20–34\n- Hanya sedikit / tidak relevan → 0–19\n\n2. Pengalaman Kerja / Project (30%)\n- ≥ batas minimal pengalaman posisi tersebut → 25–30\n- Di bawah batas tapi ada project nyata → 15–24\n- Hanya teori / tanpa pengalaman → 0–14\n\n3. Kesesuaian Posisi (20%)\n- Sangat sesuai dengan posisi → 16–20\n- Masih IT tapi beda fokus → 8–15\n- Tidak relevan sama sekali → 0–7\n\n4. Kualitas CV (10%)\n- Jelas, rapi, terstruktur → 8–10\n- Cukup jelas → 5–7\n- Berantakan / minim info → 0–4\n\n========================================\nATURAN TAMBAHAN:\n========================================\n- Jika skill wajib utama tidak ada → skor skill maksimal 15\n- Jika hanya sebut skill tanpa bukti → kurangi nilai\n- Jika ada project atau portofolio nyata → tambahkan nilai pengalaman\n- Fresh graduate dengan project yang relevan → masih bisa mendapat skor tinggi\n- Jika posisi sangat berbeda dari background kandidat → turunkan skor posisi\n\n========================================\nKEPUTUSAN:\n========================================\n- Skor ≥ 70 → LOLOS\n- Skor < 70 → TIDAK LOLOS\n\n========================================\nOUTPUT WAJIB JSON (tanpa teks lain):\n========================================\n\n{\n  \"nama\": \"\",\n  \"email\": \"\",\n  \"nomor_hp\": \"\",\n  \"alamat\": \"\",\n  \"posisi_dilamar\": \"\",\n  \"skor\": 0,\n  \"keputusan\": \"LOLOS atau TIDAK LOLOS\",\n  \"ringkasan\": \"\",\n  \"kelebihan\": [\"\", \"\", \"\"],\n  \"kekurangan\": [\"\", \"\", \"\"],\n  \"alasan\": \"\",\n  \"rekomendasi\": \"INTERVIEW atau REJECT\",\n  \"skills\": [],\n  \"pendidikan\": \"\"\n}\n\n========================================\nPENTING:\n========================================\n- Skor HARUS hasil penjumlahan dari 4 komponen di atas\n- Jangan asal angka — beri penilaian berdasarkan fakta di CV\n- Deteksi posisi dari SUBJECT EMAIL, bukan dari CV\n- Gunakan kriteria posisi yang sesuai dari daftar di atas\n- Jawaban HARUS JSON valid tanpa teks tambahan apapun",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -112,
+        368
+      ],
+      "id": "3be05962-0cc4-441c-adcf-cd9aba8082f3",
+      "name": "Evaluasi & Scoring Kandidat"
+    },
+    {
+      "parameters": {
+        "jsCode": "let raw = $json.output;\n\n// bersihin markdown ```json ```\nraw = raw.replace(/```json/g, \"\")\n         .replace(/```/g, \"\")\n         .trim();\n\nreturn [\n  {\n    json: JSON.parse(raw)\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        368
+      ],
+      "id": "a9ceebd0-a241-4f1b-9f7b-168932dd8f50",
+      "name": "Konversi Output AI ke JSON"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "44b715b8-7fac-48d8-8f03-df093ce2e690",
+              "leftValue": "={{ $json.keputusan }}",
+              "rightValue": "TIDAK LOLOS",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        400,
+        368
+      ],
+      "id": "2e6b584a-0ed3-466a-8a0d-db05a45edb72",
+      "name": "Cek Keputusan LOLOS / TIDAK LOLOS"
+    },
+    {
+      "parameters": {
+        "resume": "specificTime",
+        "dateTime": "={{\n  (() => {\n    const now = new Date();\n    const tomorrow = new Date(now);\n    tomorrow.setDate(now.getDate() + 1);\n    tomorrow.setHours(8, 0, 0, 0);\n    return tomorrow;\n  })()\n}}"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        704,
+        256
+      ],
+      "id": "ed7c3a57-7f4c-4022-a765-f8234e3669a9",
+      "name": "Tunda Kirim Email Penolakan",
+      "webhookId": "1f33a893-1b67-40c9-8b2f-3c9ff58a828d"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Terima Email Lamaran').item.json.headers['return-path'].match(/<([^>]+)>/)[1] }}",
+        "subject": "=Hasil Seleksi Lamaran - {{ $('Konversi Output AI ke JSON').item.json.posisi_dilamar }}",
+        "emailType": "text",
+        "message": "=Yth. {{ $json.nama }},\n\nTerima kasih atas minat dan waktu yang telah Anda luangkan untuk melamar posisi {{ $json.posisi_dilamar }} di perusahaan kami.\n\nSetelah melalui proses evaluasi terhadap profil dan pengalaman yang Anda miliki, kami menyampaikan bahwa pada tahap ini kami belum dapat melanjutkan lamaran Anda ke proses berikutnya.\n\nKeputusan ini kami ambil dengan mempertimbangkan kesesuaian antara kualifikasi yang dibutuhkan dengan profil kandidat yang ada. Meskipun demikian, kami sangat mengapresiasi usaha dan potensi yang Anda tunjukkan.\n\nKami mendorong Anda untuk tetap mengembangkan kemampuan dan tidak ragu untuk melamar kembali di kesempatan mendatang apabila terdapat posisi yang lebih sesuai dengan profil Anda.\n\nKami juga akan menyimpan data Anda dalam database kami untuk peluang yang relevan di masa depan.\n\nTerima kasih atas perhatian dan partisipasi Anda.\n\nHormat kami,\nHR Team\nPT. Contoh Perusahaan",
+        "options": {
+          "appendAttribution": true
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        256
+      ],
+      "id": "e6eb38e8-cc74-4f05-a378-7f69934b63fd",
+      "name": "Kirim Email Penolakan",
+      "webhookId": "140ad8fb-7316-4b8e-9003-a9796417d3ab",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "LEczYB9mRqk0aoLK",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "kumabear858@gmail.com",
+          "mode": "list",
+          "cachedResultName": "kumabear858@gmail.com"
+        },
+        "start": "={{ \n  new Date(\n    new Date().setHours(\n      Math.floor(Math.random() * (15 - 9) + 9), \n      0, \n      0\n    )\n  )\n}}",
+        "end": "={{ \n  new Date(\n    new Date(\n      new Date().setHours(\n        Math.floor(Math.random() * (15 - 9) + 9), \n        0, \n        0\n      )\n    ).getTime() + 60 * 60 * 1000\n  )\n}}",
+        "additionalFields": {
+          "attendees": [
+            "={{ $json.email }}"
+          ],
+          "conferenceDataUi": {
+            "conferenceDataValues": {
+              "conferenceSolution": "hangoutsMeet"
+            }
+          },
+          "summary": "Interview"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        704,
+        480
+      ],
+      "id": "d4c7ad27-349b-4d6e-b22b-6fe33aef8d32",
+      "name": "Buat Jadwal Interview",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "U0m6lMCGN1TC2iCW",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1FnTzg2AqmuYJBmr6g9l7htlBA2ICuIdoOTXh0jX-h30",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "LOLOS",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FnTzg2AqmuYJBmr6g9l7htlBA2ICuIdoOTXh0jX-h30/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "nama": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.nama }}",
+            "email": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.email }}",
+            "nomor_hp": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.nomor_hp }}",
+            "alamat": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.alamat }}",
+            "posisi_dilamar": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.posisi_dilamar }}",
+            "skor": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.skor }}",
+            "keputusan": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.keputusan }}",
+            "ringkasan": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.ringkasan }}",
+            "kelebihan": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.kelebihan }}",
+            "kekurangan": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.kekurangan }}",
+            "alasan": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.alasan }}",
+            "rekomendasi": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.rekomendasi }}",
+            "skills": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.skills }}",
+            "pendidikan": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.pendidikan }}",
+            "interview_date": "={{ $json.start.dateTime }}",
+            "interview_link": "={{ $json.conferenceData.entryPoints[0].uri }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "nama",
+              "displayName": "nama",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "nomor_hp",
+              "displayName": "nomor_hp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "alamat",
+              "displayName": "alamat",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "posisi_dilamar",
+              "displayName": "posisi_dilamar",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "skor",
+              "displayName": "skor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "keputusan",
+              "displayName": "keputusan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ringkasan",
+              "displayName": "ringkasan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "kelebihan",
+              "displayName": "kelebihan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "kekurangan",
+              "displayName": "kekurangan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "alasan",
+              "displayName": "alasan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rekomendasi",
+              "displayName": "rekomendasi",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "skills",
+              "displayName": "skills",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pendidikan",
+              "displayName": "pendidikan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "interview_date",
+              "displayName": "interview_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "interview_link",
+              "displayName": "interview_link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        912,
+        480
+      ],
+      "id": "7ab39a03-2772-47b6-89e0-d3a7ce58b28c",
+      "name": "Simpan Data Kandidat Lolos",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XP8s0hnlhFRf7hqE",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resume": "specificTime",
+        "dateTime": "={{\n  (() => {\n    const now = new Date();\n    const tomorrow = new Date(now);\n    tomorrow.setDate(now.getDate() + 1);\n    tomorrow.setHours(8, 0, 0, 0);\n    return tomorrow;\n  })()\n}}"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1088,
+        480
+      ],
+      "id": "fd62e047-44eb-4b37-bc2a-836473fbb622",
+      "name": "Tunda Kirim Undangan Interview",
+      "webhookId": "1f33a893-1b67-40c9-8b2f-3c9ff58a828d"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Simpan Data Kandidat Lolos').item.json.email }}",
+        "subject": "=Undangan Interview - {{$json.posisi_dilamar}}",
+        "emailType": "text",
+        "message": "=Yth. {{$json.nama}},\n\nTerima kasih atas ketertarikan Anda untuk melamar posisi {{$json.posisi_dilamar}} di perusahaan kami.\n\nSetelah melakukan proses seleksi awal, kami dengan senang hati menginformasikan bahwa Anda LOLOS ke tahap interview.\n\nBerikut detail jadwal interview Anda:\n\n📅 Tanggal: {{ new Date($json.interview_date).toLocaleDateString('id-ID', { \n  day: 'numeric', \n  month: 'long', \n  year: 'numeric' \n}) }}\n⏰ Waktu: {{ new Date($('Buat Jadwal Interview').item.json.start.dateTime).toLocaleTimeString('id-ID', { \n  hour: '2-digit', \n  minute: '2-digit' \n}) }}\n📍 Lokasi: Online (Google Meet)\n🔗 Link Interview: {{ $('Buat Jadwal Interview').item.json.conferenceData.entryPoints[0].uri }}\n\nKami mengharapkan kehadiran Anda sesuai jadwal yang telah ditentukan. Jika Anda berhalangan hadir, mohon konfirmasi dengan membalas email ini.\n\nSebagai persiapan, kami menyarankan Anda untuk:\n\nMemastikan koneksi internet stabil\nBergabung 5–10 menit sebelum waktu interview\nMenyiapkan pertanyaan terkait posisi yang dilamar\n\nKami menantikan kesempatan untuk mengenal Anda lebih lanjut.\n\nHormat kami,\nHR Team\nPT. Contoh Perusahaan",
+        "options": {
+          "appendAttribution": true
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1264,
+        480
+      ],
+      "id": "ee263890-baf1-4456-9b54-a51e80a83f39",
+      "name": "Kirim Undangan Interview",
+      "webhookId": "9c2f2687-9eff-4026-a0ce-634fe311ce1e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "LEczYB9mRqk0aoLK",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1FnTzg2AqmuYJBmr6g9l7htlBA2ICuIdoOTXh0jX-h30",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1929557355,
+          "mode": "list",
+          "cachedResultName": "TIDAK LOLOS",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FnTzg2AqmuYJBmr6g9l7htlBA2ICuIdoOTXh0jX-h30/edit#gid=1929557355"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "nama": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.nama }}",
+            "email": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.email }}",
+            "nomor_hp": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.nomor_hp }}",
+            "alamat": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.alamat }}",
+            "posisi_dilamar": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.posisi_dilamar }}",
+            "skor": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.skor }}",
+            "keputusan": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.keputusan }}",
+            "ringkasan": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.ringkasan }}",
+            "kelebihan": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.kelebihan }}",
+            "kekurangan": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.kekurangan }}",
+            "alasan": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.alasan }}",
+            "rekomendasi": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.rekomendasi }}",
+            "skills": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.skills }}",
+            "pendidikan": "={{ $('Cek Keputusan LOLOS / TIDAK LOLOS').item.json.pendidikan }}",
+            "interview_date": "={{ $json.start.dateTime }}",
+            "interview_link": "={{ $json.conferenceData.entryPoints[0].uri }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "nama",
+              "displayName": "nama",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "nomor_hp",
+              "displayName": "nomor_hp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "alamat",
+              "displayName": "alamat",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "posisi_dilamar",
+              "displayName": "posisi_dilamar",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "skor",
+              "displayName": "skor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "keputusan",
+              "displayName": "keputusan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ringkasan",
+              "displayName": "ringkasan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "kelebihan",
+              "displayName": "kelebihan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "kekurangan",
+              "displayName": "kekurangan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "alasan",
+              "displayName": "alasan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rekomendasi",
+              "displayName": "rekomendasi",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "skills",
+              "displayName": "skills",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pendidikan",
+              "displayName": "pendidikan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "interview_date",
+              "displayName": "interview_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "interview_link",
+              "displayName": "interview_link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        912,
+        256
+      ],
+      "id": "ff78632d-700e-4af1-a449-0103ba08b4db",
+      "name": "Simpan Data Kandidat Tidak Lolos",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XP8s0hnlhFRf7hqE",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Evaluasi & Scoring Kandidat",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Terima Email Lamaran": {
+      "main": [
+        [
+          {
+            "node": "Ambil Detail Email & Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ambil Detail Email & Attachment": {
+      "main": [
+        [
+          {
+            "node": "Ambil Email & Subject",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Ekstrak Teks CV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ambil Email & Subject": {
+      "main": [
+        [
+          {
+            "node": "Gabungkan Data Email & CV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ekstrak Teks CV": {
+      "main": [
+        [
+          {
+            "node": "Simpan Teks CV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simpan Teks CV": {
+      "main": [
+        [
+          {
+            "node": "Gabungkan Data Email & CV",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Gabungkan Data Email & CV": {
+      "main": [
+        [
+          {
+            "node": "Evaluasi & Scoring Kandidat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluasi & Scoring Kandidat": {
+      "main": [
+        [
+          {
+            "node": "Konversi Output AI ke JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Konversi Output AI ke JSON": {
+      "main": [
+        [
+          {
+            "node": "Cek Keputusan LOLOS / TIDAK LOLOS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cek Keputusan LOLOS / TIDAK LOLOS": {
+      "main": [
+        [
+          {
+            "node": "Tunda Kirim Email Penolakan",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buat Jadwal Interview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tunda Kirim Email Penolakan": {
+      "main": [
+        [
+          {
+            "node": "Simpan Data Kandidat Tidak Lolos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kirim Email Penolakan": {
+      "main": [
+        []
+      ]
+    },
+    "Buat Jadwal Interview": {
+      "main": [
+        [
+          {
+            "node": "Simpan Data Kandidat Lolos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simpan Data Kandidat Lolos": {
+      "main": [
+        [
+          {
+            "node": "Tunda Kirim Undangan Interview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tunda Kirim Undangan Interview": {
+      "main": [
+        [
+          {
+            "node": "Kirim Undangan Interview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simpan Data Kandidat Tidak Lolos": {
+      "main": [
+        [
+          {
+            "node": "Kirim Email Penolakan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "18a1661a-4baa-4bc6-ab35-866fbfc90ccf",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4efee352b37c4d1db00014c1ef67b0489f144589397a23365e015cda2c6ae107"
+  },
+  "id": "ZSQEZSgV0hLqVonI",
+  "tags": []
+}
